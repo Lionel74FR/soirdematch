@@ -1,1 +1,2 @@
 - [Package firewall CVE blocks](package-firewall-cve-blocks.md) — npm proxy 403s versions with critical CVEs; bump to latest patch (hit on next@14.2.15 → 14.2.35).
+- [Neon vs Replit DATABASE_URL](neon-database-url-on-replit.md) — Vercel/Neon project; Replit reserves DATABASE_URL, so Neon URL lives in NEON_DATABASE_URL; push via Git pane.

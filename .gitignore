@@ -39,5 +39,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# drizzle
-/drizzle
+# drizzle (keep migrations in git; ignore only studio/temp artifacts)
+/drizzle/.drizzle
