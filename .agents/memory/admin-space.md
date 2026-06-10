@@ -20,6 +20,13 @@ The questionnaire has NO "do you smoke?" field — only `smokingDealbreaker`
 **Why:** there is no smoker attribute to filter on.
 **How to apply:** to get real smoking filtering, add a "fumeur ?" question first.
 
+## Branding constraint: "proIA Conseil" appears in exactly one place
+The dev-credit "Site développé par proIA Conseil" must appear ONLY on
+`/mentions-legales`. Everywhere else (footer, etc.) the brand is **Matalon
+Events**. **Why:** explicit client requirement.
+**How to apply:** before adding any "developed by"/credit text elsewhere, don't —
+and if editing footers/about pages, keep proIA off them.
+
 ## Testing cookie-authed admin endpoints without a browser login
 The screenshot/preview tool cannot submit the login form, so it always lands on
 `/admin/login`. To test auth-gated routes from the shell, mint a valid session

@@ -41,3 +41,31 @@ h3 {
   font-family: var(--font-space-mono), monospace;
   letter-spacing: 0.2em;
 }
+
+/* Pages légales (mentions, confidentialité) */
+.legal h2 {
+  font-family: var(--font-montserrat), sans-serif;
+  color: var(--cream);
+  font-size: 1.15rem;
+  margin-top: 1.8rem;
+  margin-bottom: 0.6rem;
+}
+.legal p,
+.legal li {
+  color: var(--grey);
+  line-height: 1.7;
+}
+.legal ul {
+  list-style: disc;
+  padding-left: 1.3rem;
+  margin: 0.4rem 0;
+}
+.legal li {
+  margin-bottom: 0.4rem;
+}
+.legal a {
+  color: var(--coral);
+}
+.legal strong {
+  color: var(--cream);
+}
