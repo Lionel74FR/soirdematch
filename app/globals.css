@@ -3,12 +3,41 @@
 @tailwind utilities;
 
 :root {
-  --background: #F6EFE3;
-  --foreground: #171B2B;
+  --navy: #171b2b;
+  --navy2: #242a46;
+  --cream: #f6efe3;
+  --coral: #f07b5c;
+  --gold: #ffc93c;
+  --rose: #cd6973;
+  --orange: #f38c5f;
+  --mute: #969bb4;
+  --grey: #c4c8d8;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--navy);
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background: var(--navy);
+  color: var(--cream);
   font-family: var(--font-poppins), sans-serif;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-montserrat), sans-serif;
+}
+
+.mono {
+  font-family: var(--font-space-mono), monospace;
+  letter-spacing: 0.2em;
 }
