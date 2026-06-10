@@ -1,0 +1,1 @@
+- [Package firewall CVE blocks](package-firewall-cve-blocks.md) — npm proxy 403s versions with critical CVEs; bump to latest patch (hit on next@14.2.15 → 14.2.35).
