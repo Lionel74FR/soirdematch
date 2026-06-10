@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   events,
@@ -19,9 +19,8 @@ import type { Answers } from "@/lib/questionnaire";
 
 export const runtime = "nodejs";
 
-const ACTIVE_STATUS = ["pending", "paid"];
-
-/** ÉTAPE 3 — déclenchement MANUEL du matching (jamais automatique). */
+/** ÉTAPE 3 — déclenchement MANUEL du matching (jamais automatique).
+ *  Ne matche que les inscrits confirmés (paiement validé). */
 export async function POST() {
   if (!isAuthenticated()) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
@@ -54,10 +53,7 @@ export async function POST() {
       eq(questionnaireAnswers.registrationId, registrations.id),
     )
     .where(
-      and(
-        eq(registrations.eventId, event.id),
-        inArray(registrations.status, ACTIVE_STATUS),
-      ),
+      and(eq(registrations.eventId, event.id), eq(registrations.paid, true)),
     );
 
   const participants: MatchParticipant[] = rows.map((r) => ({

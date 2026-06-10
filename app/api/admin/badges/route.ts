@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { events, registrations } from "@/lib/db/schema";
 import { isAuthenticated } from "@/lib/admin-auth";
@@ -7,9 +7,8 @@ import { audit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
-const ACTIVE_STATUS = ["pending", "paid"];
-
-/** ÉTAPE 4 — attribution des numéros de badge aux inscrits confirmés. */
+/** ÉTAPE 4 — attribution des numéros de badge aux inscrits confirmés
+ *  (paiement validé). */
 export async function POST() {
   if (!isAuthenticated()) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
@@ -34,10 +33,7 @@ export async function POST() {
     .select({ id: registrations.id })
     .from(registrations)
     .where(
-      and(
-        eq(registrations.eventId, event.id),
-        inArray(registrations.status, ACTIVE_STATUS),
-      ),
+      and(eq(registrations.eventId, event.id), eq(registrations.paid, true)),
     )
     .orderBy(asc(registrations.gender), asc(registrations.createdAt));
 
