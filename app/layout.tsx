@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { montserrat, poppins, spaceMono } from "./fonts";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,12 +13,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gaId =
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-Y3F5325JWP";
   return (
     <html
       lang="fr"
       className={`${montserrat.variable} ${poppins.variable} ${spaceMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
+      </body>
     </html>
   );
 }

@@ -8,6 +8,7 @@ import {
   type Answers,
   type Question,
 } from "@/lib/questionnaire";
+import { trackEvent } from "@/lib/gtag";
 
 type Phase = "form" | "waitlist" | "waitlisted" | "success";
 
@@ -31,6 +32,8 @@ export default function Questionnaire() {
     const status = new URLSearchParams(window.location.search).get("status");
     if (status === "success") {
       setPhase("success");
+      // Conversion : paiement confirmé (retour depuis Stripe).
+      trackEvent("complete_registration");
       return; // écran terminal : on n'ouvre pas le questionnaire.
     }
     if (status === "cancelled") setCancelled(true);
@@ -38,6 +41,7 @@ export default function Questionnaire() {
     if (startFired.current) return;
     startFired.current = true;
     // ÉTAPE 2 — StartQuestionnaire uniquement à l'ouverture réelle du formulaire.
+    trackEvent("start_questionnaire");
     fetch("/api/inscription/start", { method: "POST" }).catch(() => {});
   }, []);
 
@@ -98,6 +102,8 @@ export default function Questionnaire() {
         return;
       }
       if (data.url) {
+        // Départ vers le paiement Stripe.
+        trackEvent("begin_checkout");
         window.location.href = data.url;
         return;
       }
