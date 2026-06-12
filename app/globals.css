@@ -42,6 +42,47 @@ h3 {
   letter-spacing: 0.2em;
 }
 
+/* Coeurs flottants (page d'accueil) */
+.hearts {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
+}
+.heart {
+  position: absolute;
+  bottom: -40px;
+  color: var(--coral);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: floatUp;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) scale(0.6) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.55;
+  }
+  85% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(-110vh) scale(1) rotate(22deg);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .heart {
+    animation: none;
+    display: none;
+  }
+}
+
 /* Pages légales (mentions, confidentialité) */
 .legal h2 {
   font-family: var(--font-montserrat), sans-serif;
