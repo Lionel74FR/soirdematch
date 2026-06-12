@@ -142,6 +142,7 @@ export default function Questionnaire() {
             Ta place est réservée. Tu recevras ta confirmation par email, et tes
             matchs te seront révélés le soir de la soirée.
           </p>
+          <InstaInvite />
           <Link className="btn-p" href="/">
             Retour à l&apos;accueil
           </Link>
@@ -161,6 +162,7 @@ export default function Questionnaire() {
             Les places pour ton profil sont complètes, mais ça bouge souvent&nbsp;!
             On te préviendra par email dès qu&apos;une place se libère.
           </p>
+          <InstaInvite />
           <Link className="btn-p" href="/">
             Retour à l&apos;accueil
           </Link>
@@ -389,6 +391,29 @@ function Shell({ children }: { children: React.ReactNode }) {
       </Link>
       <div className="inner">{children}</div>
     </main>
+  );
+}
+
+function InstaInvite() {
+  return (
+    <a
+      className="insta-invite"
+      href="https://www.instagram.com/soirdematch/"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <span className="insta-ico" aria-hidden>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+        </svg>
+      </span>
+      <span className="insta-txt">
+        <strong>Suis-nous sur Instagram</strong>
+        Coulisses, ambiance et prochaines dates&nbsp;: @soirdematch
+      </span>
+    </a>
   );
 }
 
@@ -628,6 +653,51 @@ function Styles() {
         line-height: 1.65;
         margin: 16px auto 28px;
         max-width: 460px;
+      }
+      .insta-invite {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        text-align: left;
+        max-width: 420px;
+        margin: 0 auto 24px;
+        padding: 16px 18px;
+        border-radius: 18px;
+        text-decoration: none;
+        background: linear-gradient(
+          110deg,
+          rgba(205, 105, 115, 0.16),
+          rgba(240, 123, 92, 0.16)
+        );
+        border: 1px solid rgba(240, 123, 92, 0.4);
+        transition: transform 0.18s, border-color 0.18s;
+      }
+      .insta-invite:hover {
+        transform: translateY(-2px);
+        border-color: var(--coral);
+      }
+      .insta-ico {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 13px;
+        color: var(--cream);
+        background: linear-gradient(135deg, var(--gold), var(--coral), var(--rose));
+      }
+      .insta-txt {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        color: var(--grey);
+        font-size: 13.5px;
+        line-height: 1.45;
+      }
+      .insta-txt strong {
+        color: var(--cream);
+        font-size: 15px;
+        font-weight: 700;
       }
     `}</style>
   );
