@@ -102,7 +102,24 @@ function confirmationHtml({
               </td>
             </tr>
             <tr>
-              <td style="padding:22px 32px 30px;">
+              <td style="padding:4px 32px 6px;">
+                <a href="https://www.instagram.com/soirdematch/" style="text-decoration:none;display:block;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #eaddc7;border-radius:14px;">
+                    <tr>
+                      <td width="48" valign="middle" style="padding:16px 0 16px 18px;">
+                        <div style="width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#ffc93c,#f07b5c,#cd6973);text-align:center;line-height:40px;font-size:20px;">📸</div>
+                      </td>
+                      <td valign="middle" style="padding:16px 18px;">
+                        <div style="font-size:15px;font-weight:700;color:#1a1f3a;">Suis-nous sur Instagram</div>
+                        <div style="font-size:13px;color:#8a8470;margin-top:2px;">Coulisses, ambiance et prochaines dates : @soirdematch</div>
+                      </td>
+                    </tr>
+                  </table>
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 32px 30px;">
                 <hr style="border:none;border-top:1px solid #eaddc7;margin:0 0 16px;" />
                 <p style="margin:0;font-size:12px;line-height:1.6;color:#8a8470;">Tu reçois cet email car tu t'es inscrit(e) à une soirée Soir de Match. Tes données sont conservées 30&nbsp;jours après l'événement puis supprimées (voir notre politique de confidentialité).</p>
               </td>
