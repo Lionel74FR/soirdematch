@@ -6,16 +6,17 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://soir-de-match.app"),
   title: {
-    default: "Soir de Match — Speed-dating à Annecy",
+    default: "Soir de Match — Soirée célibataires à Annecy",
     template: "%s · Soir de Match",
   },
   description:
-    "Une soirée speed-dating au Chardon d'Écosse, à Annecy. Rencontre des célibataires près de chez toi autour d'un verre, puis découvre tes matchs.",
+    "La soirée célibataires d'Annecy où l'algorithme a déjà fait les présentations. Profils compatibles, buffet inclus, DJ et afterparty au Chardon d'Écosse.",
   keywords: [
-    "speed dating",
-    "Annecy",
+    "soirée célibataires",
     "rencontre",
+    "Annecy",
     "célibataires",
+    "algorithme",
     "Soir de Match",
     "Le Chardon d'Écosse",
   ],
@@ -24,15 +25,15 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: "https://soir-de-match.app",
     siteName: "Soir de Match",
-    title: "Soir de Match — Speed-dating à Annecy",
+    title: "Soir de Match — Soirée célibataires à Annecy",
     description:
-      "Une soirée speed-dating au Chardon d'Écosse, à Annecy. Rencontre des célibataires près de chez toi autour d'un verre, puis découvre tes matchs.",
+      "La soirée célibataires d'Annecy où l'algorithme a déjà fait les présentations. Profils compatibles, buffet inclus, DJ et afterparty au Chardon d'Écosse.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Soir de Match — Speed-dating à Annecy",
+    title: "Soir de Match — Soirée célibataires à Annecy",
     description:
-      "Une soirée speed-dating au Chardon d'Écosse, à Annecy. Rencontre des célibataires près de chez toi autour d'un verre.",
+      "La soirée célibataires d'Annecy où l'algorithme a déjà fait les présentations. Profils compatibles, buffet inclus, DJ et afterparty au Chardon d'Écosse.",
   },
 };
 
