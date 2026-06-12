@@ -1,3 +1,4 @@
 - [Replit→Vercel deploy quirks](replit-vercel-deploy.md) — lockfile registry rewrite needed for Vercel; next pinned by firewall; dev preview vs Vercel hosting.
 - [Inscription quota & neon-http limits](inscription-quota-concurrency.md) — quota is best-effort single-statement; neon-http has no interactive transactions/locks.
 - [Admin space decisions](admin-space.md) — "confirmé"=paid (matching+badges); smoking filter is a proxy (no smoker field); mint HMAC cookie to test auth routes via curl.
+- [Testing quirks](replit-testing-quirks.md) — bash tool kills backgrounded servers; run node scripts from workspace root not /tmp; `next build` hangs, use `tsc --noEmit`.
