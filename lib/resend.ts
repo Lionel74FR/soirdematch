@@ -1,7 +1,15 @@
 import { Resend } from "resend";
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error("RESEND_API_KEY environment variable is not set");
-}
+let client: Resend | null = null;
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+/**
+ * Renvoie le client Resend, ou null si RESEND_API_KEY n'est pas défini.
+ * Lazy + non bloquant : l'absence de clé ne doit jamais faire planter
+ * l'import d'une route (ex. webhook Stripe).
+ */
+export function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  if (!client) client = new Resend(key);
+  return client;
+}

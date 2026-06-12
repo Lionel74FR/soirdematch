@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { registrations } from "@/lib/db/schema";
+import { events, registrations } from "@/lib/db/schema";
 import { getStripe } from "@/lib/stripe";
 import { audit } from "@/lib/audit";
+import { sendRegistrationConfirmation } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -85,6 +86,44 @@ export async function POST(req: NextRequest) {
           amountTotal: session.amount_total,
           currency: session.currency,
         });
+
+        // Email de confirmation — envoyé une seule fois (au passage à paid),
+        // donc jamais dupliqué sur une nouvelle tentative Stripe. Non bloquant :
+        // un échec d'email ne doit pas faire échouer le webhook.
+        try {
+          const [reg] = await db
+            .select({
+              firstName: registrations.firstName,
+              email: registrations.email,
+              eventId: registrations.eventId,
+            })
+            .from(registrations)
+            .where(eq(registrations.id, updated[0].id))
+            .limit(1);
+
+          if (reg) {
+            const [ev] = await db
+              .select({
+                title: events.title,
+                eventDate: events.eventDate,
+              })
+              .from(events)
+              .where(eq(events.id, reg.eventId))
+              .limit(1);
+
+            await sendRegistrationConfirmation({
+              to: reg.email,
+              firstName: reg.firstName,
+              eventTitle: ev?.title ?? "Soir de Match",
+              eventDate: ev?.eventDate ?? new Date(),
+            });
+          }
+        } catch (err) {
+          console.error(
+            "Envoi de l'email de confirmation échoué :",
+            (err as Error).message,
+          );
+        }
       }
     }
   }
