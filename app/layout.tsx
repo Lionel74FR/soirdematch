@@ -28,12 +28,21 @@ export const metadata: Metadata = {
     title: "Soir de Match — Soirée célibataires à Annecy",
     description:
       "La soirée célibataires d'Annecy où l'algorithme a déjà fait les présentations. Profils compatibles, buffet inclus, DJ et afterparty au Chardon d'Écosse.",
+    images: [
+      {
+        url: "https://soir-de-match.app/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Soir de Match — Soirée célibataires à Annecy",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Soir de Match — Soirée célibataires à Annecy",
     description:
       "La soirée célibataires d'Annecy où l'algorithme a déjà fait les présentations. Profils compatibles, buffet inclus, DJ et afterparty au Chardon d'Écosse.",
+    images: ["https://soir-de-match.app/og-image.png"],
   },
 };
 
