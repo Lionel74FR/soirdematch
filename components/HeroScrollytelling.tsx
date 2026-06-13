@@ -141,22 +141,22 @@ export default function HeroScrollytelling() {
               <div className="gauge h">
                 <div className="row">
                   <span>Hommes</span>
-                  <span className="mono">18 / 25</span>
+                  <span className="mono">18 / 40</span>
                 </div>
                 <div className="track">
-                  <div className="fill" data-w="72%" />
+                  <div className="fill" data-w="45%" />
                 </div>
               </div>
               <div className="gauge f">
                 <div className="row">
                   <span>Femmes</span>
-                  <span className="mono">13 / 25</span>
+                  <span className="mono">13 / 40</span>
                 </div>
                 <div className="track">
-                  <div className="fill" data-w="52%" />
+                  <div className="fill" data-w="33%" />
                 </div>
               </div>
-              <div className="rest">19 places restantes</div>
+              <div className="rest">49 places restantes</div>
             </div>
           </div>
         </div>
