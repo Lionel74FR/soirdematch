@@ -380,6 +380,7 @@ export default function HeroScrollytelling() {
           padding: 16px 32px;
           border-radius: 99px;
           text-decoration: none;
+          border: 1px solid rgba(255, 255, 255, 0.6);
           box-shadow: 0 8px 34px rgba(240, 123, 92, 0.45);
         }
         .btn-s {
