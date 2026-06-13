@@ -3,6 +3,7 @@ import HeroScrollytelling from "@/components/HeroScrollytelling";
 import LandingSections from "@/components/LandingSections";
 import Footer from "@/components/Footer";
 import FloatingHearts from "@/components/FloatingHearts";
+import ScrollToTop from "@/components/ScrollToTop";
 
 export default function Home() {
   return (
@@ -44,6 +45,7 @@ export default function Home() {
       <HeroScrollytelling />
       <LandingSections />
       <Footer />
+      <ScrollToTop />
     </>
   );
 }
