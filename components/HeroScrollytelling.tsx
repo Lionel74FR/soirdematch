@@ -4,9 +4,36 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 
 export default function HeroScrollytelling() {
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Clic sur le hero : joue l'animation automatiquement (en faisant défiler
+  // jusqu'à la fin du « scrollStage », là où le titre « Ce soir, j'ai match »
+  // est révélé). Le scroll manuel reste possible.
+  const playToReveal = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Ne pas intercepter les clics sur les liens/boutons une fois révélés.
+    if ((e.target as HTMLElement).closest("a, button")) return;
+
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduced) return; // le hero est déjà affiché en entier
+
+    const stage = document.getElementById("scrollStage");
+    if (!stage) return;
+
+    const target = stage.offsetTop + stage.offsetHeight - window.innerHeight;
+    if (Math.abs(window.scrollY - target) < 4) return; // déjà au bout
+
+    gsap.registerPlugin(ScrollToPlugin);
+    gsap.to(window, {
+      scrollTo: { y: target, autoKill: true },
+      duration: 2.2,
+      ease: "power2.inOut",
+    });
+  };
 
   useEffect(() => {
     const root = rootRef.current;
@@ -23,7 +50,7 @@ export default function HeroScrollytelling() {
       return;
     }
 
-    gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
@@ -83,7 +110,13 @@ export default function HeroScrollytelling() {
   return (
     <div ref={rootRef}>
       <div className="scroll-stage" id="scrollStage">
-        <div className="stage">
+        <div
+          className="stage"
+          onClick={playToReveal}
+          role="button"
+          tabIndex={-1}
+          aria-label="Lancer l'animation et révéler la soirée"
+        >
           <div className="bg-glow" />
           <div className="beam" id="beam" />
           <div className="badge-wrap" id="badgeWrap">
@@ -104,7 +137,7 @@ export default function HeroScrollytelling() {
             </div>
           </div>
           <div className="scroll-hint mono" id="hint">
-            SCROLLEZ — LA RENCONTRE COMMENCE
+            CLIQUEZ — LA RENCONTRE COMMENCE
           </div>
 
           <div className="reveal" id="reveal">
@@ -175,6 +208,7 @@ export default function HeroScrollytelling() {
           display: flex;
           align-items: center;
           justify-content: center;
+          cursor: pointer;
         }
         .bg-glow {
           position: absolute;
