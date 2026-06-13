@@ -8,10 +8,13 @@ const FROM =
   process.env.RESEND_FROM || "Soir de Match <noreply@soir-de-match.app>";
 
 function formatFrDate(date: Date): string {
+  // event_date est un timestamp SANS fuseau : l'heure stockée (19:30) est déjà
+  // l'heure locale d'Annecy. Le driver la relit comme 19:30 UTC ; on formate
+  // donc en UTC pour réafficher l'heure murale telle quelle (sinon +2h -> 21:30).
   return new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "full",
     timeStyle: "short",
-    timeZone: "Europe/Paris",
+    timeZone: "UTC",
   }).format(date);
 }
 
