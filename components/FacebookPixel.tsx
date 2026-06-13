@@ -1,18 +1,45 @@
 "use client";
 
 import Script from "next/script";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+
+type Fbq = (...args: unknown[]) => void;
 
 /**
  * Pixel Meta (Facebook) côté navigateur. Le Pixel ID est public : il est
  * visible dans les requêtes émises par le navigateur. Il complète le suivi
  * serveur (Conversions API) déjà en place.
  *
- * Le composant ne rend rien si l'ID n'est pas défini.
+ * Anti-doublon PageView :
+ * - `fbq('init', …)` est exécuté UNE SEULE FOIS via un script `beforeInteractive`
+ *   (avant l'hydratation), donc `window.fbq` est prêt avant tout effet React.
+ * - `fbq('track', 'PageView')` n'est PAS dans le snippet inline : il est émis
+ *   uniquement depuis un `useEffect` déclenché par `usePathname`, ce qui donne
+ *   exactement 1 PageView au premier chargement, puis 1 à chaque changement de
+ *   route (navigation App Router).
+ * - Un garde au niveau module (`lastTrackedPath`) empêche un second envoi pour
+ *   un chemin identique (ex. double invocation des effets par React Strict Mode
+ *   en développement).
  */
+
+let lastTrackedPath: string | null = null;
+
 export default function FacebookPixel({ pixelId }: { pixelId: string }) {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fbq = (window as unknown as { fbq?: Fbq }).fbq;
+    if (!fbq) return;
+    if (pathname === lastTrackedPath) return;
+    lastTrackedPath = pathname;
+    fbq("track", "PageView");
+  }, [pathname]);
+
   return (
     <>
-      <Script id="fb-pixel" strategy="afterInteractive">
+      <Script id="fb-pixel-init" strategy="beforeInteractive">
         {`
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -23,7 +50,6 @@ export default function FacebookPixel({ pixelId }: { pixelId: string }) {
           s.parentNode.insertBefore(t,s)}(window, document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
           fbq('init', '${pixelId}');
-          fbq('track', 'PageView');
         `}
       </Script>
       <noscript>
