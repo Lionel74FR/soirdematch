@@ -28,8 +28,10 @@ export default function HeroScrollytelling() {
     if (Math.abs(window.scrollY - target) < 4) return; // déjà au bout
 
     gsap.registerPlugin(ScrollToPlugin);
+    // autoKill: false → sur mobile, le repli de la barre d'adresse modifie
+    // innerHeight et déclenchait l'annulation prématurée de l'animation.
     gsap.to(window, {
-      scrollTo: { y: target, autoKill: true },
+      scrollTo: { y: target, autoKill: false },
       duration: 2.2,
       ease: "power2.inOut",
     });
