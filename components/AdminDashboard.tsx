@@ -32,6 +32,16 @@ interface Props {
 
 const currentYear = new Date().getFullYear();
 
+type StatusFilter = "all" | "paid" | "pending" | "waitlist";
+
+function isPaid(r: DashboardRegistration): boolean {
+  return r.paid || r.status === "paid";
+}
+
+function isPending(r: DashboardRegistration): boolean {
+  return r.status === "pending" && !r.paid;
+}
+
 function ageOf(birthYear: number | null): string {
   return birthYear ? `${currentYear - birthYear} ans` : "—";
 }
@@ -51,23 +61,28 @@ export default function AdminDashboard({
   const [busy, setBusy] = useState<null | "matching" | "badges">(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<StatusFilter>("all");
 
   const stats = useMemo(() => {
-    const active = registrations.filter(
-      (r) => r.status === "pending" || r.status === "paid",
-    );
+    // Seules les inscriptions payées comptent comme « inscrits ». Les
+    // « en attente » (paiement non finalisé) ne sont PAS comptabilisées.
+    const confirmed = registrations.filter((r) => isPaid(r));
+    const pendingList = registrations.filter((r) => isPending(r));
     const waitlist = registrations.filter((r) => r.status === "waitlist");
-    const homme = active.filter((r) => r.gender === "homme").length;
-    const femme = active.filter((r) => r.gender === "femme").length;
-    const autre = active.filter(
+    const homme = confirmed.filter((r) => r.gender === "homme").length;
+    const femme = confirmed.filter((r) => r.gender === "femme").length;
+    const autre = confirmed.filter(
       (r) => r.gender !== "homme" && r.gender !== "femme",
     ).length;
-    const paid = active.filter((r) => r.paid || r.status === "paid").length;
-    const pending = active.length - paid;
+    const paid = confirmed.length;
+    const pending = pendingList.length;
     const capacity = event?.capacity ?? 0;
-    const fillRate = capacity ? Math.round((active.length / capacity) * 100) : 0;
+    const fillRate = capacity
+      ? Math.round((confirmed.length / capacity) * 100)
+      : 0;
     return {
-      active,
+      confirmed,
+      pendingList,
       waitlist,
       homme,
       femme,
@@ -78,6 +93,14 @@ export default function AdminDashboard({
       fillRate,
     };
   }, [registrations, event]);
+
+  const filtered = useMemo(() => {
+    if (filter === "paid") return registrations.filter((r) => isPaid(r));
+    if (filter === "pending") return registrations.filter((r) => isPending(r));
+    if (filter === "waitlist")
+      return registrations.filter((r) => r.status === "waitlist");
+    return registrations;
+  }, [registrations, filter]);
 
   async function runAction(kind: "matching" | "badges") {
     if (kind === "matching") {
@@ -157,7 +180,7 @@ export default function AdminDashboard({
             <div className="fill">
               <div className="fillnum">{stats.fillRate}%</div>
               <div className="filllabel">
-                {stats.active.length} / {stats.capacity} places
+                {stats.confirmed.length} / {stats.capacity} places payées
               </div>
             </div>
           </div>
@@ -205,8 +228,7 @@ export default function AdminDashboard({
 
           {/* Statistiques */}
           <div className="grid">
-            <Stat label="Inscrits actifs" value={stats.active.length} />
-            <Stat label="Payés" value={stats.paid} accent="gold" />
+            <Stat label="Inscrits (payés)" value={stats.paid} accent="gold" />
             <Stat label="En attente de paiement" value={stats.pending} />
             <Stat
               label="Liste d'attente"
@@ -246,7 +268,27 @@ export default function AdminDashboard({
           <div className="card">
             <div className="cardhead">
               <h3>Inscrits</h3>
-              <span className="muted">{registrations.length} au total</span>
+              <span className="muted">
+                {filtered.length} affiché(s) · {registrations.length} au total
+              </span>
+            </div>
+            <div className="filters">
+              {(
+                [
+                  ["all", `Tous (${registrations.length})`],
+                  ["paid", `Payés (${stats.paid})`],
+                  ["pending", `En attente (${stats.pending})`],
+                  ["waitlist", `Liste d'attente (${stats.waitlist.length})`],
+                ] as [StatusFilter, string][]
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  className={`filterbtn ${filter === key ? "on" : ""}`}
+                  onClick={() => setFilter(key)}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
             <div className="tablewrap">
               <table>
@@ -261,14 +303,14 @@ export default function AdminDashboard({
                   </tr>
                 </thead>
                 <tbody>
-                  {registrations.length === 0 && (
+                  {filtered.length === 0 && (
                     <tr>
                       <td colSpan={6} className="muted center">
-                        Aucun inscrit pour l'instant.
+                        Aucun inscrit pour ce filtre.
                       </td>
                     </tr>
                   )}
-                  {registrations.map((r) => (
+                  {filtered.map((r) => (
                     <tr key={r.id}>
                       <td>{r.badgeNumber ?? "—"}</td>
                       <td>{r.firstName}</td>
@@ -502,6 +544,32 @@ export default function AdminDashboard({
         .primary:not(:disabled):active,
         .secondary:not(:disabled):active {
           transform: scale(0.98);
+        }
+        .filters {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin-bottom: 16px;
+        }
+        .filterbtn {
+          border-radius: 999px;
+          padding: 7px 14px;
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          color: var(--grey);
+          background: transparent;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          transition: background 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .filterbtn:hover {
+          color: var(--cream);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+        .filterbtn.on {
+          background: var(--coral);
+          color: var(--navy);
+          border-color: var(--coral);
         }
         .tablewrap {
           overflow-x: auto;
