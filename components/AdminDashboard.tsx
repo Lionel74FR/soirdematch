@@ -61,6 +61,7 @@ export default function AdminDashboard({
   const router = useRouter();
   const [busy, setBusy] = useState<null | "matching" | "badges">(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [relancingId, setRelancingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
@@ -166,6 +167,39 @@ export default function AdminDashboard({
       setError("Acceptation impossible.");
     } finally {
       setAcceptingId(null);
+    }
+  }
+
+  async function relancePayment(r: DashboardRegistration) {
+    const ok = window.confirm(
+      `Relancer ${r.firstName} ? Un email de rappel avec le lien de paiement lui sera renvoyé.`,
+    );
+    if (!ok) return;
+    setRelancingId(r.id);
+    setNotice(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/relance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registrationId: r.id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as Record<
+        string,
+        unknown
+      >;
+      if (!res.ok) {
+        setError((data.error as string) || "Relance impossible.");
+        return;
+      }
+      setNotice(
+        `${r.firstName} a été relancé(e) : un email de rappel vient d'être envoyé.`,
+      );
+      router.refresh();
+    } catch {
+      setError("Relance impossible.");
+    } finally {
+      setRelancingId(null);
     }
   }
 
@@ -381,6 +415,15 @@ export default function AdminDashboard({
                               {acceptingId === r.id
                                 ? "Envoi…"
                                 : "Accepter"}
+                            </button>
+                          )}
+                          {r.status === "pending" && (
+                            <button
+                              className="relancebtn"
+                              disabled={relancingId !== null}
+                              onClick={() => relancePayment(r)}
+                            >
+                              {relancingId === r.id ? "Envoi…" : "Relancer"}
                             </button>
                           )}
                         </div>
@@ -697,6 +740,25 @@ export default function AdminDashboard({
           opacity: 0.9;
         }
         .acceptbtn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .relancebtn {
+          border-radius: 999px;
+          padding: 5px 12px;
+          font-size: 0.76rem;
+          font-weight: 700;
+          cursor: pointer;
+          color: var(--navy);
+          background: var(--gold);
+          border: none;
+          white-space: nowrap;
+          transition: opacity 0.2s;
+        }
+        .relancebtn:hover:not(:disabled) {
+          opacity: 0.9;
+        }
+        .relancebtn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
