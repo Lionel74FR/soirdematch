@@ -62,6 +62,50 @@ export async function sendRegistrationConfirmation(
   }
 }
 
+type WaitlistAcceptedParams = {
+  to: string;
+  firstName: string;
+  eventTitle: string;
+  eventDate: Date;
+  checkoutUrl: string;
+};
+
+/**
+ * Envoie l'email « bonne nouvelle, une place s'est libérée » à une personne
+ * de la liste d'attente, avec le lien de paiement Stripe pour confirmer.
+ */
+export async function sendWaitlistAcceptedEmail(
+  params: WaitlistAcceptedParams,
+): Promise<boolean> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn(
+      "Resend non configuré (RESEND_API_KEY absente) : email d'acceptation non envoyé.",
+    );
+    return false;
+  }
+
+  const dateStr = formatFrDate(params.eventDate);
+  const html = waitlistAcceptedHtml({
+    firstName: params.firstName,
+    eventTitle: params.eventTitle,
+    dateStr,
+    checkoutUrl: params.checkoutUrl,
+  });
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: params.to,
+    subject: "Une place s'est libérée pour Soir de Match 💘",
+    html,
+  });
+
+  if (error) {
+    throw new Error(`Resend: ${error.message ?? JSON.stringify(error)}`);
+  }
+  return true;
+}
+
 function confirmationHtml({
   firstName,
   eventTitle,
@@ -119,6 +163,71 @@ function confirmationHtml({
                     </tr>
                   </table>
                 </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 32px 30px;">
+                <hr style="border:none;border-top:1px solid #eaddc7;margin:0 0 16px;" />
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#8a8470;">Tu reçois cet email car tu t'es inscrit(e) à une soirée Soir de Match. Tes données sont conservées 30&nbsp;jours après l'événement puis supprimées (voir notre politique de confidentialité).</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+function waitlistAcceptedHtml({
+  firstName,
+  eventTitle,
+  dateStr,
+  checkoutUrl,
+}: {
+  firstName: string;
+  eventTitle: string;
+  dateStr: string;
+  checkoutUrl: string;
+}): string {
+  return `<!doctype html>
+<html lang="fr">
+  <body style="margin:0;padding:0;background:#0f1330;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1f3a;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Une place s'est libérée pour ${eventTitle}.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0f1330;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fdf6ec;border-radius:20px;overflow:hidden;">
+            <tr>
+              <td style="background:#1a1f3a;padding:34px 32px 28px;text-align:center;">
+                <div style="font-size:12px;letter-spacing:0.32em;color:#f5e9d8;font-weight:600;">SOIR DE MATCH</div>
+                <div style="font-size:46px;line-height:1;margin-top:14px;">💘</div>
+                <h1 style="margin:14px 0 0;font-size:25px;color:#fdf6ec;font-weight:800;">Une place s'est libérée&nbsp;!</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:30px 32px 8px;">
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Salut ${firstName},</p>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Bonne nouvelle&nbsp;: une place vient de se libérer pour <strong>${eventTitle}</strong> et on te la propose&nbsp;! Pour confirmer ta place, il te suffit de régler ton billet en ligne&nbsp;:</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 20px;">
+                  <tr>
+                    <td align="center">
+                      <a href="${checkoutUrl}" style="display:inline-block;background:#f07b5c;color:#1a1f3a;text-decoration:none;font-weight:800;font-size:16px;padding:16px 34px;border-radius:999px;">Confirmer et payer ma place</a>
+                    </td>
+                  </tr>
+                </table>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 20px;background:#fff;border:1px solid #eaddc7;border-radius:14px;">
+                  <tr>
+                    <td style="padding:18px 20px;">
+                      <div style="font-size:12px;letter-spacing:0.12em;color:#c9742f;font-weight:700;text-transform:uppercase;">Quand</div>
+                      <div style="font-size:16px;margin-top:4px;color:#1a1f3a;font-weight:600;">${dateStr}</div>
+                      <div style="font-size:12px;letter-spacing:0.12em;color:#c9742f;font-weight:700;text-transform:uppercase;margin-top:14px;">Où</div>
+                      <div style="font-size:16px;margin-top:4px;color:#1a1f3a;font-weight:600;">Le Chardon d'Écosse — Annecy</div>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#8a8470;">Les places sont limitées&nbsp;: pense à confirmer rapidement pour ne pas la perdre. Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur&nbsp;:<br/><a href="${checkoutUrl}" style="color:#c9742f;word-break:break-all;">${checkoutUrl}</a></p>
+                <p style="margin:0;font-size:16px;line-height:1.6;">À très vite,<br/>L'équipe Soir de Match</p>
               </td>
             </tr>
             <tr>

@@ -60,6 +60,7 @@ export default function AdminDashboard({
 }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<null | "matching" | "badges">(null);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
@@ -132,6 +133,39 @@ export default function AdminDashboard({
       setError("Action impossible.");
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function acceptWaitlist(r: DashboardRegistration) {
+    const ok = window.confirm(
+      `Accepter ${r.firstName} ? Un email avec le lien de paiement lui sera envoyé pour confirmer sa place.`,
+    );
+    if (!ok) return;
+    setAcceptingId(r.id);
+    setNotice(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registrationId: r.id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as Record<
+        string,
+        unknown
+      >;
+      if (!res.ok) {
+        setError((data.error as string) || "Acceptation impossible.");
+        return;
+      }
+      setNotice(
+        `${r.firstName} a été accepté(e) : un email avec le lien de paiement vient d'être envoyé.`,
+      );
+      router.refresh();
+    } catch {
+      setError("Acceptation impossible.");
+    } finally {
+      setAcceptingId(null);
     }
   }
 
@@ -334,9 +368,22 @@ export default function AdminDashboard({
                       <td className="cap">{r.gender ?? "—"}</td>
                       <td>{ageOf(r.birthYear)}</td>
                       <td>
-                        <span className={`pill ${pillClass(r)}`}>
-                          {statusLabel(r)}
-                        </span>
+                        <div className="statuscell">
+                          <span className={`pill ${pillClass(r)}`}>
+                            {statusLabel(r)}
+                          </span>
+                          {r.status === "waitlist" && (
+                            <button
+                              className="acceptbtn"
+                              disabled={acceptingId !== null}
+                              onClick={() => acceptWaitlist(r)}
+                            >
+                              {acceptingId === r.id
+                                ? "Envoi…"
+                                : "Accepter"}
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="muted">
                         {new Date(r.createdAt).toLocaleDateString("fr-FR", {
@@ -628,6 +675,30 @@ export default function AdminDashboard({
         }
         td.center {
           text-align: center;
+        }
+        .statuscell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .acceptbtn {
+          border-radius: 999px;
+          padding: 5px 12px;
+          font-size: 0.76rem;
+          font-weight: 700;
+          cursor: pointer;
+          color: var(--navy);
+          background: var(--coral);
+          border: none;
+          white-space: nowrap;
+          transition: opacity 0.2s;
+        }
+        .acceptbtn:hover:not(:disabled) {
+          opacity: 0.9;
+        }
+        .acceptbtn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         .pill {
           display: inline-block;
