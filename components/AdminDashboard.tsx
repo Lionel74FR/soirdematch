@@ -16,6 +16,7 @@ export interface DashboardRegistration {
   id: string;
   firstName: string;
   email: string;
+  phone: string | null;
   gender: string | null;
   birthYear: number | null;
   status: string;
@@ -296,6 +297,8 @@ export default function AdminDashboard({
                   <tr>
                     <th>Badge</th>
                     <th>Prénom</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
                     <th>Genre</th>
                     <th>Âge</th>
                     <th>Statut</th>
@@ -305,7 +308,7 @@ export default function AdminDashboard({
                 <tbody>
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="muted center">
+                      <td colSpan={8} className="muted center">
                         Aucun inscrit pour ce filtre.
                       </td>
                     </tr>
@@ -314,6 +317,20 @@ export default function AdminDashboard({
                     <tr key={r.id}>
                       <td>{r.badgeNumber ?? "—"}</td>
                       <td>{r.firstName}</td>
+                      <td className="contact">
+                        {r.email ? (
+                          <a href={`mailto:${r.email}`}>{r.email}</a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="contact">
+                        {r.phone ? (
+                          <a href={`tel:${r.phone}`}>{r.phone}</a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="cap">{r.gender ?? "—"}</td>
                       <td>{ageOf(r.birthYear)}</td>
                       <td>
@@ -596,6 +613,18 @@ export default function AdminDashboard({
         }
         td.cap {
           text-transform: capitalize;
+        }
+        td.contact {
+          font-size: 0.84rem;
+          white-space: nowrap;
+        }
+        td.contact a {
+          color: var(--grey);
+          text-decoration: none;
+        }
+        td.contact a:hover {
+          color: var(--coral);
+          text-decoration: underline;
         }
         td.center {
           text-align: center;
