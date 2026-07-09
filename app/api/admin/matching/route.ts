@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   events,
@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/schema";
 import { isAuthenticated } from "@/lib/admin-auth";
 import { audit } from "@/lib/audit";
+import { EXCLUDED_MATCH_EMAILS } from "@/lib/exclusions";
 import {
   computeGroups,
   DEFAULT_STRATEGY,
@@ -58,7 +59,11 @@ export async function POST() {
       eq(questionnaireAnswers.registrationId, registrations.id),
     )
     .where(
-      and(eq(registrations.eventId, event.id), eq(registrations.paid, true)),
+      and(
+        eq(registrations.eventId, event.id),
+        eq(registrations.paid, true),
+        notInArray(sql`lower(${registrations.email})`, EXCLUDED_MATCH_EMAILS),
+      ),
     );
 
   const participants: MatchParticipant[] = rows.map((r) => ({
@@ -78,6 +83,17 @@ export async function POST() {
     .update(registrations)
     .set({ groupNumber: null })
     .where(eq(registrations.eventId, event.id));
+
+  // Les inscriptions exclues n'ont ni groupe ni badge.
+  await db
+    .update(registrations)
+    .set({ groupNumber: null, badgeNumber: null })
+    .where(
+      and(
+        eq(registrations.eventId, event.id),
+        inArray(sql`lower(${registrations.email})`, EXCLUDED_MATCH_EMAILS),
+      ),
+    );
 
   // Affecte le numéro de groupe à chaque participant et stocke les paires
   // intra-groupe (pour l'affichage des affinités).

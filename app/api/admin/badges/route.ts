@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, notInArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { events, registrations } from "@/lib/db/schema";
 import { isAuthenticated } from "@/lib/admin-auth";
 import { audit } from "@/lib/audit";
+import { EXCLUDED_MATCH_EMAILS } from "@/lib/exclusions";
 
 export const runtime = "nodejs";
 
@@ -36,7 +37,11 @@ export async function POST() {
     })
     .from(registrations)
     .where(
-      and(eq(registrations.eventId, event.id), eq(registrations.paid, true)),
+      and(
+        eq(registrations.eventId, event.id),
+        eq(registrations.paid, true),
+        notInArray(sql`lower(${registrations.email})`, EXCLUDED_MATCH_EMAILS),
+      ),
     )
     .orderBy(asc(registrations.groupNumber), asc(registrations.createdAt));
 
