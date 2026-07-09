@@ -1,1 +1,1 @@
-- [Email sending (Resend)](email-sending.md) — confirmation emails fire from the Stripe webhook on paid-flip (idempotent); RESEND_API_KEY alone isn't enough, FROM domain must be verified in Resend or sends are silently lost.
+- [Data access (Neon vs Replit DB)](data-access.md) — app data is in Neon via NEON_DATABASE_URL; executeSql hits the empty Replit DB. Query with node scripts from repo root.

@@ -330,6 +330,13 @@ export default function AdminDashboard({
               >
                 {busy === "badges" ? "Attribution…" : "Attribuer les badges"}
               </button>
+              <button
+                className="secondary"
+                disabled={matchCount === 0}
+                onClick={() => router.push("/admin/matches")}
+              >
+                Voir les résultats
+              </button>
             </div>
           </div>
 
