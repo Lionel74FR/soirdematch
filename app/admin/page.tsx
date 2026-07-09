@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { events, registrations, matches } from "@/lib/db/schema";
+import { events, registrations } from "@/lib/db/schema";
 import { isAuthenticated } from "@/lib/admin-auth";
 import AdminDashboard, {
   type DashboardEvent,
@@ -27,7 +27,7 @@ export default async function AdminPage() {
 
   let dashEvent: DashboardEvent | null = null;
   let regs: DashboardRegistration[] = [];
-  let matchCount = 0;
+  let groupCount = 0;
 
   if (event) {
     dashEvent = {
@@ -69,18 +69,23 @@ export default async function AdminPage() {
       createdAt: r.createdAt.toISOString(),
     }));
 
-    const m = await db
-      .select({ id: matches.id })
-      .from(matches)
-      .where(eq(matches.eventId, event.id));
-    matchCount = m.length;
+    const grouped = await db
+      .selectDistinct({ groupNumber: registrations.groupNumber })
+      .from(registrations)
+      .where(
+        and(
+          eq(registrations.eventId, event.id),
+          isNotNull(registrations.groupNumber),
+        ),
+      );
+    groupCount = grouped.length;
   }
 
   return (
     <AdminDashboard
       event={dashEvent}
       registrations={regs}
-      matchCount={matchCount}
+      groupCount={groupCount}
     />
   );
 }

@@ -28,7 +28,7 @@ export interface DashboardRegistration {
 interface Props {
   event: DashboardEvent | null;
   registrations: DashboardRegistration[];
-  matchCount: number;
+  groupCount: number;
 }
 
 const currentYear = new Date().getFullYear();
@@ -56,7 +56,7 @@ function statusLabel(r: DashboardRegistration): string {
 export default function AdminDashboard({
   event,
   registrations,
-  matchCount,
+  groupCount,
 }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<null | "matching" | "badges">(null);
@@ -124,7 +124,7 @@ export default function AdminDashboard({
       }
       if (kind === "matching") {
         setNotice(
-          `Matching terminé : ${data.pairs} paires pour ${data.participants} participants (top ${data.topScore}/100, moyenne ${data.avgScore}/100).`,
+          `Matching terminé : ${data.groups} groupes formés pour ${data.participants} participants (meilleur groupe ${data.topScore}/100, affinité moyenne ${data.avgScore}/100).`,
         );
       } else {
         setNotice(`${data.count} badges attribués.`);
@@ -304,7 +304,7 @@ export default function AdminDashboard({
               value={stats.waitlist.length}
               accent="rose"
             />
-            <Stat label="Paires calculées" value={matchCount} accent="coral" />
+            <Stat label="Groupes formés" value={groupCount} accent="coral" />
           </div>
 
           {/* Actions */}
@@ -332,7 +332,7 @@ export default function AdminDashboard({
               </button>
               <button
                 className="secondary"
-                disabled={matchCount === 0}
+                disabled={groupCount === 0}
                 onClick={() => router.push("/admin/matches")}
               >
                 Voir les résultats

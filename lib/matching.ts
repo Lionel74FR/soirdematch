@@ -162,6 +162,156 @@ export function pairScore(
   return Math.round((acc / totalW) * 1000) / 10;
 }
 
+export interface GroupResult {
+  index: number; // numéro de groupe 1..k (= numéro de badge)
+  memberIds: string[];
+  pairs: PairResult[]; // paires intra-groupe avec leur score
+  avgScore: number; // affinité moyenne du groupe (0..100)
+}
+
+/** Répartit `count` éléments en `k` parts aussi égales que possible. */
+function distribute(count: number, k: number): number[] {
+  const base = Math.floor(count / k);
+  const rem = count % k;
+  return Array.from({ length: k }, (_, g) => base + (g < rem ? 1 : 0));
+}
+
+/**
+ * Répartit les participants en `numGroups` groupes d'affinité équilibrés.
+ *
+ * - Chaque groupe reçoit une part juste de chaque genre (tables mixtes, adapté
+ *   à une soirée de rencontres).
+ * - Affectation gloutonne : chacun rejoint le groupe (avec capacité restante
+ *   pour son genre) où son affinité moyenne aux membres déjà présents est la
+ *   plus forte.
+ * - Amélioration locale : on échange deux personnes de même genre entre groupes
+ *   tant que cela augmente l'affinité intra-groupe totale.
+ *
+ * Les groupes sont renvoyés triés par affinité moyenne décroissante et
+ * numérotés de 1 à k (ce numéro sert de numéro de badge).
+ */
+export function computeGroups(
+  participants: MatchParticipant[],
+  strategy: MatchingStrategy,
+  numGroups: number,
+): GroupResult[] {
+  const n = participants.length;
+  if (n === 0) return [];
+  const k = Math.max(1, Math.min(numGroups, n));
+  const weights = strategy.weights ?? DEFAULT_STRATEGY.weights ?? {};
+
+  // Matrice d'affinité (0..100) entre indices de participants.
+  const aff: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const s = pairScore(participants[i], participants[j], weights);
+      aff[i][j] = s;
+      aff[j][i] = s;
+    }
+  }
+
+  // Indices regroupés par genre + capacité par groupe pour chaque genre.
+  const byGender = new Map<string, number[]>();
+  participants.forEach((p, i) => {
+    const key = p.gender ?? "autre";
+    if (!byGender.has(key)) byGender.set(key, []);
+    byGender.get(key)!.push(i);
+  });
+  const genderCap: Record<string, number[]> = {};
+  for (const [g, idxs] of Array.from(byGender.entries())) {
+    genderCap[g] = distribute(idxs.length, k);
+  }
+
+  const groups: number[][] = Array.from({ length: k }, () => []);
+  const placedByGender: Record<string, number>[] = groups.map(() => ({}));
+
+  // Traite les genres du plus nombreux au moins nombreux, pour que les suivants
+  // se placent près de membres compatibles déjà installés.
+  const genderOrder = Array.from(byGender.keys()).sort(
+    (a, b) => byGender.get(b)!.length - byGender.get(a)!.length,
+  );
+
+  for (const g of genderOrder) {
+    for (const idx of byGender.get(g)!) {
+      let best = -1;
+      let bestScore = -Infinity;
+      for (let gi = 0; gi < k; gi++) {
+        if ((placedByGender[gi][g] ?? 0) >= genderCap[g][gi]) continue;
+        const members = groups[gi];
+        const avg =
+          members.length === 0
+            ? 0
+            : members.reduce((s, m) => s + aff[idx][m], 0) / members.length;
+        const adj = avg - members.length * 0.001; // départage : plus petit groupe
+        if (adj > bestScore) {
+          bestScore = adj;
+          best = gi;
+        }
+      }
+      if (best === -1) {
+        best = groups.reduce(
+          (min, m, gi) => (m.length < groups[min].length ? gi : min),
+          0,
+        );
+      }
+      groups[best].push(idx);
+      placedByGender[best][g] = (placedByGender[best][g] ?? 0) + 1;
+    }
+  }
+
+  // Amélioration locale par échanges de même genre (garde l'équilibre).
+  const memberAff = (gi: number, idx: number): number =>
+    groups[gi].reduce((s, m) => (m === idx ? s : s + aff[idx][m]), 0);
+  let improved = true;
+  let passes = 0;
+  while (improved && passes < 8) {
+    improved = false;
+    passes++;
+    for (let g1 = 0; g1 < k; g1++) {
+      for (let g2 = g1 + 1; g2 < k; g2++) {
+        for (const x of [...groups[g1]]) {
+          for (const y of [...groups[g2]]) {
+            if ((participants[x].gender ?? "autre") !== (participants[y].gender ?? "autre")) {
+              continue;
+            }
+            if (!groups[g1].includes(x) || !groups[g2].includes(y)) continue;
+            const before = memberAff(g1, x) + memberAff(g2, y);
+            const afterX = groups[g2].reduce((s, m) => (m === y ? s : s + aff[x][m]), 0);
+            const afterY = groups[g1].reduce((s, m) => (m === x ? s : s + aff[y][m]), 0);
+            if (afterX + afterY > before + 1e-9) {
+              groups[g1][groups[g1].indexOf(x)] = y;
+              groups[g2][groups[g2].indexOf(y)] = x;
+              improved = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const results: GroupResult[] = groups.map((members) => {
+    const pairs: PairResult[] = [];
+    for (let i = 0; i < members.length; i++) {
+      for (let j = i + 1; j < members.length; j++) {
+        pairs.push({
+          a: participants[members[i]].id,
+          b: participants[members[j]].id,
+          score: aff[members[i]][members[j]],
+        });
+      }
+    }
+    const avgScore =
+      pairs.length === 0
+        ? 0
+        : Math.round((pairs.reduce((s, p) => s + p.score, 0) / pairs.length) * 10) / 10;
+    return { index: 0, memberIds: members.map((m) => participants[m].id), pairs, avgScore };
+  });
+
+  results.sort((a, b) => b.avgScore - a.avgScore);
+  results.forEach((r, i) => (r.index = i + 1));
+  return results;
+}
+
 /**
  * Calcule toutes les paires valides (filtres durs passés) avec leur score,
  * triées par score décroissant.

@@ -28,24 +28,38 @@ export async function POST() {
     );
   }
 
-  // Badges groupés par genre puis ordre d'inscription, pour la logistique.
+  // Le badge de chaque participant = son numéro de groupe de match (1..5).
   const confirmed = await db
-    .select({ id: registrations.id })
+    .select({
+      id: registrations.id,
+      groupNumber: registrations.groupNumber,
+    })
     .from(registrations)
     .where(
       and(eq(registrations.eventId, event.id), eq(registrations.paid, true)),
     )
-    .orderBy(asc(registrations.gender), asc(registrations.createdAt));
+    .orderBy(asc(registrations.groupNumber), asc(registrations.createdAt));
 
-  let badge = 0;
-  for (const r of confirmed) {
-    badge += 1;
-    await db
-      .update(registrations)
-      .set({ badgeNumber: badge })
-      .where(eq(registrations.id, r.id));
+  const ungrouped = confirmed.filter((r) => r.groupNumber == null).length;
+  if (ungrouped > 0) {
+    return NextResponse.json(
+      {
+        error:
+          "Lance d'abord le matching pour former les groupes : certains inscrits n'ont pas encore de groupe.",
+      },
+      { status: 409 },
+    );
   }
 
-  await audit("assign_badges", "event", event.id, { count: badge });
-  return NextResponse.json({ ok: true, count: badge });
+  let count = 0;
+  for (const r of confirmed) {
+    await db
+      .update(registrations)
+      .set({ badgeNumber: r.groupNumber })
+      .where(eq(registrations.id, r.id));
+    count += 1;
+  }
+
+  await audit("assign_badges", "event", event.id, { count });
+  return NextResponse.json({ ok: true, count });
 }

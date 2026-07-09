@@ -50,6 +50,7 @@ export const registrations = pgTable("registrations", {
   birthYear: integer("birth_year"),
   status: text("status").default("pending").notNull(),
   badgeNumber: integer("badge_number"),
+  groupNumber: integer("group_number"),
   stripeSessionId: text("stripe_session_id"),
   paid: boolean("paid").default(false).notNull(),
   consentAt: timestamp("consent_at"),

@@ -10,16 +10,15 @@ export interface MatchPerson {
   badge: number | null;
 }
 
-export interface MatchPair {
-  id: string;
-  score: number;
-  a: MatchPerson;
-  b: MatchPerson;
+export interface MatchGroup {
+  number: number;
+  avgScore: number;
+  members: MatchPerson[];
 }
 
 interface Props {
   eventTitle: string | null;
-  pairs: MatchPair[];
+  groups: MatchGroup[];
 }
 
 function scoreClass(score: number): string {
@@ -28,68 +27,64 @@ function scoreClass(score: number): string {
   return "low";
 }
 
-function personLabel(p: MatchPerson): string {
-  const badge = p.badge != null ? `#${p.badge} ` : "";
-  return `${badge}${p.name}`;
+function genderLabel(g: string | null): string {
+  if (g === "homme") return "H";
+  if (g === "femme") return "F";
+  return "?";
 }
 
-export default function MatchesView({ eventTitle, pairs }: Props) {
+export default function MatchesView({ eventTitle, groups }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState("");
 
   const stats = useMemo(() => {
-    if (pairs.length === 0) return { count: 0, top: 0, avg: 0 };
-    const scores = pairs.map((p) => p.score);
+    const people = groups.reduce((s, g) => s + g.members.length, 0);
+    const scores = groups.map((g) => g.avgScore);
     return {
-      count: pairs.length,
-      top: Math.max(...scores),
-      avg: Math.round((scores.reduce((s, v) => s + v, 0) / scores.length) * 10) / 10,
+      groups: groups.length,
+      people,
+      avg:
+        scores.length > 0
+          ? Math.round((scores.reduce((s, v) => s + v, 0) / scores.length) * 10) /
+            10
+          : 0,
     };
-  }, [pairs]);
+  }, [groups]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return pairs;
-    return pairs.filter((p) => {
-      const hay = `${p.a.name} ${p.a.email} ${p.b.name} ${p.b.email}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [pairs, query]);
+    if (!q) return groups;
+    return groups
+      .map((g) => ({
+        ...g,
+        members: g.members.filter((m) =>
+          `${m.name} ${m.email}`.toLowerCase().includes(q),
+        ),
+      }))
+      .filter((g) => g.members.length > 0);
+  }, [groups, query]);
 
   function exportCsv() {
-    const header = [
-      "rang",
-      "score",
-      "personne_a",
-      "email_a",
-      "badge_a",
-      "personne_b",
-      "email_b",
-      "badge_b",
-    ];
-    const lines = pairs.map((p, i) =>
-      [
-        i + 1,
-        p.score,
-        p.a.name,
-        p.a.email,
-        p.a.badge ?? "",
-        p.b.name,
-        p.b.email,
-        p.b.badge ?? "",
-      ]
-        .map((v) => {
-          const s = String(v);
-          return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-        })
-        .join(","),
-    );
+    const header = ["groupe", "affinite_groupe", "prenom", "email", "genre", "badge"];
+    const lines: string[] = [];
+    for (const g of groups) {
+      for (const m of g.members) {
+        lines.push(
+          [g.number, g.avgScore, m.name, m.email, m.gender ?? "", m.badge ?? ""]
+            .map((v) => {
+              const s = String(v);
+              return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+            })
+            .join(","),
+        );
+      }
+    }
     const csv = [header.join(","), ...lines].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "soir-de-match-paires.csv";
+    link.download = "soir-de-match-groupes.csv";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -99,7 +94,7 @@ export default function MatchesView({ eventTitle, pairs }: Props) {
       <header className="top">
         <div>
           <p className="mono kicker">SOIR DE MATCH — ADMIN</p>
-          <h1>Résultats du matching</h1>
+          <h1>Groupes de match</h1>
           {eventTitle && <p className="muted sub">{eventTitle}</p>}
         </div>
         <button className="ghost" onClick={() => router.push("/admin")}>
@@ -109,78 +104,70 @@ export default function MatchesView({ eventTitle, pairs }: Props) {
 
       {!eventTitle ? (
         <div className="card empty">Aucune soirée ouverte pour le moment.</div>
-      ) : pairs.length === 0 ? (
+      ) : groups.length === 0 ? (
         <div className="card empty">
-          Aucune paire calculée pour l&apos;instant. Lance le matching depuis le
+          Aucun groupe formé pour l&apos;instant. Lance le matching depuis le
           tableau de bord.
         </div>
       ) : (
         <>
           <div className="grid">
             <div className="stat">
-              <div className="statnum coral">{stats.count}</div>
-              <div className="statlabel">Paires</div>
+              <div className="statnum coral">{stats.groups}</div>
+              <div className="statlabel">Groupes</div>
             </div>
             <div className="stat">
-              <div className="statnum gold">{stats.top}</div>
-              <div className="statlabel">Meilleur score</div>
+              <div className="statnum gold">{stats.people}</div>
+              <div className="statlabel">Participants</div>
             </div>
             <div className="stat">
               <div className="statnum">{stats.avg}</div>
-              <div className="statlabel">Score moyen</div>
+              <div className="statlabel">Affinité moyenne</div>
             </div>
           </div>
 
-          <div className="card">
-            <div className="cardhead">
-              <h3>Paires ({filtered.length})</h3>
-              <div className="tools">
-                <input
-                  className="search"
-                  type="search"
-                  placeholder="Rechercher un prénom ou email…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-                <button className="secondary" onClick={exportCsv}>
-                  Exporter CSV
-                </button>
-              </div>
-            </div>
+          <div className="tools">
+            <input
+              className="search"
+              type="search"
+              placeholder="Rechercher un prénom ou email…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button className="secondary" onClick={exportCsv}>
+              Exporter CSV
+            </button>
+          </div>
 
-            <div className="tablewrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th className="rank">#</th>
-                    <th>Personne A</th>
-                    <th>Personne B</th>
-                    <th className="scorecol">Affinité</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((p, i) => (
-                    <tr key={p.id}>
-                      <td className="rank">{i + 1}</td>
-                      <td>
-                        <div className="pname">{personLabel(p.a)}</div>
-                        <div className="pmail">{p.a.email}</div>
-                      </td>
-                      <td>
-                        <div className="pname">{personLabel(p.b)}</div>
-                        <div className="pmail">{p.b.email}</div>
-                      </td>
-                      <td className="scorecol">
-                        <span className={`score ${scoreClass(p.score)}`}>
-                          {p.score}
-                          <span className="over">/100</span>
-                        </span>
-                      </td>
-                    </tr>
+          <div className="groups">
+            {filtered.map((g) => (
+              <div className="card group" key={g.number}>
+                <div className="grouphead">
+                  <div className="gtitle">
+                    <span className="gbadge">Groupe {g.number}</span>
+                    <span className="gcount">
+                      {g.members.length} personne
+                      {g.members.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <span className={`score ${scoreClass(g.avgScore)}`}>
+                    {g.avgScore}
+                    <span className="over">/100</span>
+                  </span>
+                </div>
+                <ul className="members">
+                  {g.members.map((m) => (
+                    <li key={m.email}>
+                      <span className={`gtag ${m.gender ?? "autre"}`}>
+                        {genderLabel(m.gender)}
+                      </span>
+                      <span className="pname">{m.name}</span>
+                      <span className="pmail">{m.email}</span>
+                    </li>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </ul>
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -269,23 +256,12 @@ export default function MatchesView({ eventTitle, pairs }: Props) {
           font-size: 0.85rem;
           margin-top: 4px;
         }
-        .cardhead {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-          margin-bottom: 16px;
-          flex-wrap: wrap;
-        }
-        .cardhead h3 {
-          color: var(--cream);
-          font-size: 1.05rem;
-        }
         .tools {
           display: flex;
           gap: 10px;
           align-items: center;
           flex-wrap: wrap;
+          margin-bottom: 18px;
         }
         .search {
           background: rgba(0, 0, 0, 0.25);
@@ -296,6 +272,7 @@ export default function MatchesView({ eventTitle, pairs }: Props) {
           font-size: 0.85rem;
           font-family: inherit;
           min-width: 220px;
+          flex: 1;
         }
         .search::placeholder {
           color: var(--mute);
@@ -316,47 +293,81 @@ export default function MatchesView({ eventTitle, pairs }: Props) {
         .secondary:hover {
           opacity: 0.9;
         }
-        .tablewrap {
-          overflow-x: auto;
+        .groups {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
         }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.9rem;
+        .group {
+          margin-bottom: 0;
         }
-        th {
-          text-align: left;
-          color: var(--mute);
-          font-weight: 600;
-          font-size: 0.72rem;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          padding: 0 12px 12px;
+        .grouphead {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 14px;
+          padding-bottom: 12px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
-        td {
-          padding: 14px 12px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          color: var(--grey);
-          vertical-align: middle;
+        .gtitle {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
         }
-        .rank {
-          width: 44px;
+        .gbadge {
+          color: var(--cream);
+          font-weight: 700;
+          font-size: 1.05rem;
+          font-family: var(--font-montserrat), sans-serif;
+        }
+        .gcount {
           color: var(--mute);
-          text-align: center;
+          font-size: 0.78rem;
+        }
+        .members {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .members li {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          grid-template-rows: auto auto;
+          column-gap: 10px;
+          align-items: center;
+        }
+        .gtag {
+          grid-row: 1 / 3;
+          width: 26px;
+          height: 26px;
+          border-radius: 999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.72rem;
+          font-weight: 700;
+          background: rgba(150, 155, 180, 0.16);
+          color: var(--grey);
+        }
+        .gtag.homme {
+          background: rgba(240, 123, 92, 0.16);
+          color: var(--coral);
+        }
+        .gtag.femme {
+          background: rgba(205, 105, 115, 0.18);
+          color: var(--rose);
         }
         .pname {
           color: var(--cream);
           font-weight: 600;
+          font-size: 0.92rem;
         }
         .pmail {
           color: var(--mute);
-          font-size: 0.8rem;
-          margin-top: 2px;
-        }
-        .scorecol {
-          text-align: right;
-          white-space: nowrap;
+          font-size: 0.78rem;
+          grid-column: 2;
         }
         .score {
           font-weight: 700;
@@ -364,6 +375,7 @@ export default function MatchesView({ eventTitle, pairs }: Props) {
           padding: 5px 11px;
           border-radius: 999px;
           display: inline-block;
+          white-space: nowrap;
         }
         .score .over {
           font-size: 0.7rem;
@@ -382,13 +394,17 @@ export default function MatchesView({ eventTitle, pairs }: Props) {
           background: rgba(150, 155, 180, 0.16);
           color: var(--grey);
         }
+        @media (max-width: 720px) {
+          .groups {
+            grid-template-columns: 1fr;
+          }
+        }
         @media (max-width: 640px) {
           .grid {
             grid-template-columns: 1fr;
           }
           .search {
             min-width: 0;
-            flex: 1;
           }
         }
       `}</style>
