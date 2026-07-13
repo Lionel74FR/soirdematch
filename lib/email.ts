@@ -106,6 +106,112 @@ export async function sendWaitlistAcceptedEmail(
   return true;
 }
 
+type SurveyInviteParams = {
+  to: string;
+  firstName: string;
+  surveyUrl: string;
+};
+
+/**
+ * Envoie l'invitation à donner son avis après la soirée.
+ * Le lien pointe vers /avis — questionnaire public et anonyme.
+ */
+export async function sendSurveyInviteEmail(
+  params: SurveyInviteParams,
+): Promise<boolean> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn(
+      "Resend non configuré (RESEND_API_KEY absente) : email d'avis non envoyé.",
+    );
+    return false;
+  }
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: params.to,
+    subject: "Alors, cette soirée ? Donne-nous ton avis 💬",
+    html: surveyInviteHtml({
+      firstName: params.firstName,
+      surveyUrl: params.surveyUrl,
+    }),
+  });
+
+  if (error) {
+    throw new Error(`Resend: ${error.message ?? JSON.stringify(error)}`);
+  }
+  return true;
+}
+
+function surveyInviteHtml({
+  firstName,
+  surveyUrl,
+}: {
+  firstName: string;
+  surveyUrl: string;
+}): string {
+  return `<!doctype html>
+<html lang="fr">
+  <body style="margin:0;padding:0;background:#0f1330;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1f3a;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">2 minutes pour nous dire ce que tu as pensé de la soirée.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0f1330;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fdf6ec;border-radius:20px;overflow:hidden;">
+            <tr>
+              <td style="background:#1a1f3a;padding:34px 32px 28px;text-align:center;">
+                <div style="font-size:12px;letter-spacing:0.32em;color:#f5e9d8;font-weight:600;">SOIR DE MATCH</div>
+                <div style="font-size:46px;line-height:1;margin-top:14px;">💬</div>
+                <h1 style="margin:14px 0 0;font-size:25px;color:#fdf6ec;font-weight:800;">Alors, cette soirée&nbsp;?</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:30px 32px 8px;">
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Salut ${firstName},</p>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Merci d'avoir participé à Soir de Match&nbsp;! On espère que tu as passé un super moment (et peut-être fait une belle rencontre&nbsp;😉).</p>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.6;">Pour rendre les prochaines soirées encore meilleures, dis-nous ce que tu en as pensé. C'est <strong>2&nbsp;minutes</strong> et c'est <strong>100&nbsp;% anonyme</strong>&nbsp;:</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 20px;">
+                  <tr>
+                    <td align="center">
+                      <a href="${surveyUrl}" style="display:inline-block;background:#f07b5c;color:#1a1f3a;text-decoration:none;font-weight:800;font-size:16px;padding:16px 34px;border-radius:999px;">Donner mon avis</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#8a8470;">Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur&nbsp;:<br/><a href="${surveyUrl}" style="color:#c9742f;word-break:break-all;">${surveyUrl}</a></p>
+                <p style="margin:0;font-size:16px;line-height:1.6;">Merci, et à très vite,<br/>L'équipe Soir de Match</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 32px 6px;">
+                <a href="https://www.instagram.com/soirdematch/" style="text-decoration:none;display:block;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #eaddc7;border-radius:14px;">
+                    <tr>
+                      <td width="48" valign="middle" style="padding:16px 0 16px 18px;">
+                        <div style="width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#ffc93c,#f07b5c,#cd6973);text-align:center;line-height:40px;font-size:20px;">📸</div>
+                      </td>
+                      <td valign="middle" style="padding:16px 18px;">
+                        <div style="font-size:15px;font-weight:700;color:#1a1f3a;">Suis-nous sur Instagram</div>
+                        <div style="font-size:13px;color:#8a8470;margin-top:2px;">Coulisses, ambiance et prochaines dates : @soirdematch</div>
+                      </td>
+                    </tr>
+                  </table>
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 32px 30px;">
+                <hr style="border:none;border-top:1px solid #eaddc7;margin:0 0 16px;" />
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#8a8470;">Tu reçois cet email car tu as participé à une soirée Soir de Match. Le questionnaire est anonyme&nbsp;: tes réponses ne sont pas reliées à ton inscription. Tes données d'inscription sont conservées 30&nbsp;jours après l'événement puis supprimées.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
 function confirmationHtml({
   firstName,
   eventTitle,

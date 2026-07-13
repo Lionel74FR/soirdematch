@@ -84,6 +84,21 @@ export const matches = pgTable("matches", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Avis post-soirée, anonymes par défaut (minimisation RGPD : aucun lien
+// avec l'identité du participant — ni email, ni registration_id, ni IP).
+export const surveyResponses = pgTable("survey_responses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+  noteGlobale: integer("note_globale").notNull(),
+  nps: integer("nps").notNull(),
+  qualiteMatch: integer("qualite_match").notNull(),
+  rencontre: text("rencontre").notNull(),
+  noteFormat: integer("note_format").notNull(),
+  commentaire: text("commentaire"),
+  consentAvis: boolean("consent_avis").default(false).notNull(),
+  consentMarketing: boolean("consent_marketing").default(false).notNull(),
+});
+
 // Journal d'audit pour la traçabilité RGPD.
 export const auditLog = pgTable("audit_log", {
   id: uuid("id").primaryKey().defaultRandom(),
